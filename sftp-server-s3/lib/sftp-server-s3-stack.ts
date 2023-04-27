@@ -16,7 +16,6 @@ export class SftpServerS3Stack extends cdk.Stack {
 
       const vpc_id = process.env['VPC_ID']
       const vpc    = ec2.Vpc.fromLookup(this,'default_vpc',{ vpcId: vpc_id })
-      //const public_subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PUBLIC } )
     
       const servicePrincipal = new cdk.aws_iam.ServicePrincipal('transfer.amazonaws.com');
 
