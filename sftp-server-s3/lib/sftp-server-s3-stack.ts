@@ -39,21 +39,9 @@ export class SftpServerS3Stack extends cdk.Stack {
       sftp_access.addIngressRule(ec2.Peer.ipv4(network),ec2.Port.tcp(22))
     })
 
-
-
-    /* this role is not least-privilege (logs:CreateLogGroup should not be required) */
-
+    // create a role that allows transfer to write to cloudwatch. Don't assign a policy just yet. 
     const transferLogWriterRole = new iam.Role(this,'transfer-cloudwatch-writer', {
       assumedBy: transferLogServicePrincipal,
-      inlinePolicies: {
-        allowLogging: new iam.PolicyDocument({
-          statements: [ new iam.PolicyStatement({
-            actions: ['logs:CreateLogGroup','logs:CreateLogStream','logs:DescribeLogStreams', 'logs:PutLogEvents'],
-            effect: iam.Effect.ALLOW,
-            resources: [ `arn:aws:logs:${ this.region }:${ this.account }:log-group:/aws/transfer/*` ]
-          })]
-        })
-      }
     })
 
     const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PUBLIC } ).subnetIds;
@@ -85,6 +73,14 @@ export class SftpServerS3Stack extends cdk.Stack {
       value: `${transferService.attrServerId}.server.transfer.${this.region}.amazonaws.com`
     });
 
+    // create a log group. WE create it here so we don't need to delegate rights to transfer to create the group.
+    const logGroup = new logs.LogGroup(this,'aws-xfer-lg',{
+      logGroupName: '/aws/transfer/' + transferService.attrServerId,
+      retention: logs.RetentionDays.ONE_MONTH
+    })
+
+    // add policy to allow log writer role to write to the log group.
+    logGroup.grantWrite(transferLogWriterRole)
 
     users.forEach( (user) => {
       const userBucket = new s3.Bucket(this,user['name'] + '-homedirbucket', {
@@ -100,7 +96,7 @@ export class SftpServerS3Stack extends cdk.Stack {
       // THIS IS LEAST PRIVILEGE for assume-role
       const transferUserServicePrincipal = new cdk.aws_iam.ServicePrincipal('transfer.amazonaws.com').withConditions({
         "StringEquals" : { "aws:SourceAccount": this.account },
-        "ArnLike": { "aws:SourceArn": "arn:aws:transfer:" + this.region + ":" + this.account + ":user/" + user['name'] }
+        "ArnLike": { "aws:SourceArn": "arn:aws:transfer:" + this.region + ":" + this.account + ":user/" + transferService.attrServerId + "/" + user['name'] }
       });
   
       const transferAccessRole = new iam.Role(this,user['name'] + '-transfer-role',{
