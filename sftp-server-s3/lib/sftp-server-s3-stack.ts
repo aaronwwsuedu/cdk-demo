@@ -8,14 +8,20 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as aws_transfer from  'aws-cdk-lib/aws-transfer';
 
+interface SftpServerS3StackProps extends cdk.StackProps {
+  allowedNetworks: string[]
+  vpc_id: string,
+  users: {
+    name: string;
+    publickey: string;
+  }[]
+}
+
 export class SftpServerS3Stack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: SftpServerS3StackProps) {
     super(scope, id, props);
 
-    const allowedNetworks = [ '69.166.59.127/32' ]
-
-    const vpc_id = process.env['VPC_ID']
-    const vpc    = ec2.Vpc.fromLookup(this,'default_vpc',{ vpcId: vpc_id })
+    const vpc    = ec2.Vpc.fromLookup(this,'default_vpc',{ vpcId: props?.vpc_id })
     
     /* Note that this servicePrincipal is restricted, to protect from confused deputy issues 
      * this is an example, which is still not least privilege, but limits to "only transfer servers in this account"
@@ -35,7 +41,7 @@ export class SftpServerS3Stack extends cdk.Stack {
     const sftp_access = new ec2.SecurityGroup(this,'transfer-sftp-sg',{
       vpc: vpc
     })
-    allowedNetworks.forEach( (network) => {
+    props?.allowedNetworks.forEach( (network) => {
       sftp_access.addIngressRule(ec2.Peer.ipv4(network),ec2.Port.tcp(22))
     })
 
@@ -82,7 +88,7 @@ export class SftpServerS3Stack extends cdk.Stack {
     // add policy to allow log writer role to write to the log group.
     logGroup.grantWrite(transferLogWriterRole)
 
-    users.forEach( (user) => {
+    props?.users.forEach( (user) => {
       const userBucket = new s3.Bucket(this,user['name'] + '-homedirbucket', {
         encryption: s3.BucketEncryption.S3_MANAGED,
         versioned: true,
