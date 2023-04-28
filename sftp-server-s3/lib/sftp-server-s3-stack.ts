@@ -34,10 +34,6 @@ export class SftpServerS3Stack extends cdk.Stack {
       "ArnLike": { "aws:SourceArn": "arn:aws:transfer:" + this.region + ":" + this.account + ":server/*" }
     });
 
-    const users = [
-      { 'name': 'user1', 'publickey': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCv+gxHkQB8pHR+KLyQa2Tmj9wxsMeMN+zONsqxqoZVu5I4JnLS2cA7K31KgEx3Vh61ID5tKtEOUu1uHpGV2omSJN2b0FIOiwBpw7A/iUBSl1cO7GvCeNxvsgJNvZGWgBh4Jo07UsGMFpMBSha7BiFRqaEIby/1HJedW46SCMdUPXi3kV9vmfqJEk/9iF/+HVuV1+ZorZbOxFEEE2AZq5WMtE0GdgARwwRoeeETLsw+qH564kvtJQM5yKIGkC+u0rpxabwyrR4THcoWsL7s3eD4vNMm0T6KCWGxqIpdi4DdEeKdYYdnXL+Pm6LkhBe8sw2e04SPpFlCx3J5H/XDKdZkGxOPqu4vS1PyD50DpFcd1ciDI2dLAY+Z6wsB3jL+Mv5Y239YhUTGEDhMjssk9nhAX4SPYBBe+iwCW28i8jNmTwKQgDssAEELFQKCZxEthDVeugVmogiasqdPPM/0OfGoPe02tG9xoBQ/KTKhpyoXpuvlg3I52MYB1tFvZmXM7A0= localaaron@t1-001013.vpn.wsu.edu' }
-    ]
-
     const sftp_access = new ec2.SecurityGroup(this,'transfer-sftp-sg',{
       vpc: vpc
     })
@@ -82,7 +78,8 @@ export class SftpServerS3Stack extends cdk.Stack {
     // create a log group. WE create it here so we don't need to delegate rights to transfer to create the group.
     const logGroup = new logs.LogGroup(this,'aws-xfer-lg',{
       logGroupName: '/aws/transfer/' + transferService.attrServerId,
-      retention: logs.RetentionDays.ONE_MONTH
+      retention: logs.RetentionDays.ONE_MONTH,
+      removalPolicy: cdk.RemovalPolicy.DESTROY
     })
 
     // add policy to allow log writer role to write to the log group.
