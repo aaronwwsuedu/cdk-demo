@@ -7,7 +7,10 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as aws_transfer from  'aws-cdk-lib/aws-transfer';
 
 interface SftpServerS3StackProps extends cdk.StackProps {
-  allowedNetworks: string[]
+  allowedNetworks: {
+    cidr: string;
+    comment: string;
+  }[]
   vpc_id: string,
 }
 
@@ -34,7 +37,7 @@ export class SftpServerS3Stack extends cdk.Stack {
       vpc: vpc
     })
     props.allowedNetworks.forEach( (network) => {
-      sftp_access.addIngressRule(ec2.Peer.ipv4(network),ec2.Port.tcp(22))
+      sftp_access.addIngressRule(ec2.Peer.ipv4(network['cidr']),ec2.Port.tcp(22),network['comment'])
     })
 
     // create a role that allows transfer to write to cloudwatch. Don't assign a policy just yet. 

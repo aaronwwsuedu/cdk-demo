@@ -7,9 +7,8 @@ import { SftpUsersStack } from '../lib/sftp-users-stack';
 const app = new cdk.App();
 
 
-const allowedNetworks = [ '69.166.59.127/32' ]
-
-const vpc_id = process.env['VPC_ID']
+const allowedNetworks = [ {'cidr': '69.166.59.127/32','comment': 'ITS EIS VPN NAT gateway' } ]
+const vpc_id = 'vpc-0216c91a9f09136b7'
 
 /* Note that this servicePrincipal is restricted, to protect from confused deputy issues 
  * this is an example, which is still not least privilege, but limits to "only transfer servers in this account"
@@ -40,8 +39,8 @@ const serverStack = new SftpServerS3Stack(app, 'SftpServerS3Stack', {
 
 
   // these properties are extensions of the standard Stack properties.
-  allowedNetworks: [ '69.166.59.127/32' ],
-  vpc_id: 'vpc-0216c91a9f09136b7'
+  allowedNetworks: allowedNetworks,
+  vpc_id: vpc_id
 });
 new SftpUsersStack(app,'SftpUsersStack', {
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
