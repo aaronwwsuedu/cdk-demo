@@ -12,84 +12,114 @@ export class SftpServerS3Stack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-      const allowedNetworks = [ '10.153.3.0/24' ]
+    const allowedNetworks = [ '69.166.59.127/32' ]
 
-      const vpc_id = process.env['VPC_ID']
-      const vpc    = ec2.Vpc.fromLookup(this,'default_vpc',{ vpcId: vpc_id })
+    const vpc_id = process.env['VPC_ID']
+    const vpc    = ec2.Vpc.fromLookup(this,'default_vpc',{ vpcId: vpc_id })
     
-      const servicePrincipal = new cdk.aws_iam.ServicePrincipal('transfer.amazonaws.com');
+    /* Note that this servicePrincipal is restricted, to protect from confused deputy issues 
+     * this is an example, which is still not least privilege, but limits to "only transfer servers in this account"
+     * and "only users of transfer servers in this account"
+     * 
+     * See: https://docs.aws.amazon.com/transfer/latest/userguide/confused-deputy.html
+     */
+    const transferLogServicePrincipal = new cdk.aws_iam.ServicePrincipal('transfer.amazonaws.com').withConditions({
+      "StringEquals" : { "aws:SourceAccount": this.account },
+      "ArnLike": { "aws:SourceArn": "arn:aws:transfer:" + this.region + ":" + this.account + ":server/*" }
+    });
 
-      const users = [
-        { 'name': 'user1', 'publickey': '1241251' }
-      ]
+    const users = [
+      { 'name': 'user1', 'publickey': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCv+gxHkQB8pHR+KLyQa2Tmj9wxsMeMN+zONsqxqoZVu5I4JnLS2cA7K31KgEx3Vh61ID5tKtEOUu1uHpGV2omSJN2b0FIOiwBpw7A/iUBSl1cO7GvCeNxvsgJNvZGWgBh4Jo07UsGMFpMBSha7BiFRqaEIby/1HJedW46SCMdUPXi3kV9vmfqJEk/9iF/+HVuV1+ZorZbOxFEEE2AZq5WMtE0GdgARwwRoeeETLsw+qH564kvtJQM5yKIGkC+u0rpxabwyrR4THcoWsL7s3eD4vNMm0T6KCWGxqIpdi4DdEeKdYYdnXL+Pm6LkhBe8sw2e04SPpFlCx3J5H/XDKdZkGxOPqu4vS1PyD50DpFcd1ciDI2dLAY+Z6wsB3jL+Mv5Y239YhUTGEDhMjssk9nhAX4SPYBBe+iwCW28i8jNmTwKQgDssAEELFQKCZxEthDVeugVmogiasqdPPM/0OfGoPe02tG9xoBQ/KTKhpyoXpuvlg3I52MYB1tFvZmXM7A0= localaaron@t1-001013.vpn.wsu.edu' }
+    ]
 
-      const sftp_access = new ec2.SecurityGroup(this,'transfer-sftp-sg',{
-        vpc: vpc
-      })
-      allowedNetworks.forEach( (network) => {
-        sftp_access.addIngressRule(ec2.Peer.ipv4(network),ec2.Port.tcp(22))
-      })
-    
-      /* this role is not least-privilege (logs:CreateLogGroup should not be required) */
-      const transferLogWriterRole = new iam.Role(this,'transfer-cloudwatch-writer', {
-        assumedBy: servicePrincipal,
-        inlinePolicies: {
-          allowLogging: iam.PolicyDocument.fromJson({
-            Version: '2012-10-17',
-            Statement:[{
-              Effect: 'Allow',
-              Action: ['logs:CreateLogGroup','logs:CreateLogStream','logs:DescribeLogStreams', 'logs:PutLogEvents'],
-              Resource: `arn:aws:logs:${ this.region }:${ this.account }:log-group:/aws/transfer/*`
-            }]
-          })
-        }
-      })
+    const sftp_access = new ec2.SecurityGroup(this,'transfer-sftp-sg',{
+      vpc: vpc
+    })
+    allowedNetworks.forEach( (network) => {
+      sftp_access.addIngressRule(ec2.Peer.ipv4(network),ec2.Port.tcp(22))
+    })
+
+
+
+    /* this role is not least-privilege (logs:CreateLogGroup should not be required) */
+
+    const transferLogWriterRole = new iam.Role(this,'transfer-cloudwatch-writer', {
+      assumedBy: transferLogServicePrincipal,
+      inlinePolicies: {
+        allowLogging: new iam.PolicyDocument({
+          statements: [ new iam.PolicyStatement({
+            actions: ['logs:CreateLogGroup','logs:CreateLogStream','logs:DescribeLogStreams', 'logs:PutLogEvents'],
+            effect: iam.Effect.ALLOW,
+            resources: [ `arn:aws:logs:${ this.region }:${ this.account }:log-group:/aws/transfer/*` ]
+          })]
+        })
+      }
+    })
+
+    const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PUBLIC } ).subnetIds;
+    var eips: string[] = []
+    for (let i=0;i<subnets.length;i++) {
+      eips.push(new ec2.CfnEIP(this,'transferIp-' + i,{}).attrAllocationId)
+    }
         
-      const transferService = new cdk.aws_transfer.CfnServer(this, 'transferService',{
-        endpointType: "VPC",
-        protocols: ['SFTP'],
-        identityProviderType: 'SERVICE_MANAGED',
-        loggingRole: transferLogWriterRole.roleArn,
-        domain: 'S3',
-        endpointDetails: {
-          subnetIds: vpc.selectSubnets( { subnetType: ec2.SubnetType.PUBLIC } ).subnetIds,
-          vpcId: vpc.vpcId,
-          //addressAllocationIds: [eip.attrAllocationId],
-          securityGroupIds: [sftp_access.securityGroupId]
-        },
-        protocolDetails: {
-          setStatOption: 'ENABLE_NO_OP'
-        }
+    const transferService = new cdk.aws_transfer.CfnServer(this, 'transferService',{
+      endpointType: "VPC",
+      protocols: ['SFTP'],
+      identityProviderType: 'SERVICE_MANAGED',
+      loggingRole: transferLogWriterRole.roleArn,
+      domain: 'S3',
+      endpointDetails: {
+        subnetIds: subnets,
+        vpcId: vpc.vpcId,
+        securityGroupIds: [sftp_access.securityGroupId],
+        // allocate an elastic IP so we can access our service over the internet
+        addressAllocationIds: eips,
+      },
+      protocolDetails: {
+        setStatOption: 'ENABLE_NO_OP'
+      }
+    });
+    // make the domain name an output of the stack.
+    new cdk.CfnOutput(this, 'domainName', {
+      description: 'Server endpoint hostname',
+      value: `${transferService.attrServerId}.server.transfer.${this.region}.amazonaws.com`
+    });
+
+
+    users.forEach( (user) => {
+      const userBucket = new s3.Bucket(this,user['name'] + '-homedirbucket', {
+        encryption: s3.BucketEncryption.S3_MANAGED,
+        versioned: true,
+        enforceSSL: true,
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        autoDeleteObjects: true,
+      })
+
+      // only allow the transfer server that is connected as this particular user to assume the role associated with the user
+      // THIS IS LEAST PRIVILEGE for assume-role
+      const transferUserServicePrincipal = new cdk.aws_iam.ServicePrincipal('transfer.amazonaws.com').withConditions({
+        "StringEquals" : { "aws:SourceAccount": this.account },
+        "ArnLike": { "aws:SourceArn": "arn:aws:transfer:" + this.region + ":" + this.account + ":user/" + user['name'] }
       });
+  
+      const transferAccessRole = new iam.Role(this,user['name'] + '-transfer-role',{
+        assumedBy: transferUserServicePrincipal,
+      })
 
-      users.forEach( (user) => {
-        const userBucket = new s3.Bucket(this,user['name'] + '-homedirbucket', {
-          encryption: s3.BucketEncryption.S3_MANAGED,
-          versioned: true,
-          enforceSSL: true,
-          blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-          removalPolicy: cdk.RemovalPolicy.DESTROY,
-          autoDeleteObjects: true,
-        })
+      userBucket.grantReadWrite(transferAccessRole,"*")
 
-        const transferAccessRole = new iam.Role(this,user['name'] + '-transfer-role',{
-          assumedBy: servicePrincipal,
-        })
-
-        userBucket.grantReadWrite(transferAccessRole,"*")
-
-        const sftpUser = new aws_transfer.CfnUser(this,'xfer-user-' + user['name'],{
-          userName: user['name'],
-          role: transferAccessRole.roleArn,
-          serverId: transferService.attrArn,
-          sshPublicKeys: [ user['publickey'] ],
-          homeDirectoryType: 'LOGICAL',
-          homeDirectoryMappings: [
-            { entry: "/", target: userBucket.bucketName + "/" }
-          ]
-        })
-
-      });
-    };
+      const sftpUser = new aws_transfer.CfnUser(this,'xfer-user-' + user['name'],{
+        userName: user['name'],
+        role: transferAccessRole.roleArn,
+        serverId: transferService.attrServerId,
+        sshPublicKeys: [ user['publickey'] ],
+        homeDirectoryType: 'LOGICAL',
+        homeDirectoryMappings: [
+          { entry: "/", target: "/" + userBucket.bucketName  }
+        ]
+      })
+    });
+  }
 }
 
