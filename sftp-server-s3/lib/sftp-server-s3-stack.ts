@@ -29,6 +29,10 @@ export class SftpServerS3Stack extends cdk.Stack {
      * to call assume-role
      * 
      * See: https://docs.aws.amazon.com/transfer/latest/userguide/confused-deputy.html
+     * 
+     * I (aaronw) am working on the circular reference issue here, where we need the role before we define
+     * the xfer server, but also need to know the xfer server arn to truly restrict the role
+     * As it is, this role can only be assumed by a transfer server within our account. (pretty good!)
      */
     const transferLogServicePrincipal = new cdk.aws_iam.ServicePrincipal('transfer.amazonaws.com').withConditions({
       "StringEquals" : { "aws:SourceAccount": this.account },
@@ -76,11 +80,6 @@ export class SftpServerS3Stack extends cdk.Stack {
       }
     });
 
-    // make the domain name an output of the stack, so we can see it when cdk completes.
-    new cdk.CfnOutput(this, 'domainName', {
-      description: 'Server endpoint hostname',
-      value: `${this.transfer_server.attrServerId}.server.transfer.${this.region}.amazonaws.com`
-    });
 
     // create a log group. We create it here so we don't need to delegate rights to transfer to create the group.
     const logGroup = new logs.LogGroup(this,'aws-xfer-lg',{
@@ -91,6 +90,13 @@ export class SftpServerS3Stack extends cdk.Stack {
 
     // add policy to allow log writer role to write to the log group. Note that this policy will only allow the log writer to write to streams in this specific log group.
     logGroup.grantWrite(transferLogWriterRole)
+
+    // make the domain name an output of the stack, so we can see it when cdk completes.
+    new cdk.CfnOutput(this, 'domainName', {
+      description: 'Server endpoint hostname',
+      value: `${this.transfer_server.attrServerId}.server.transfer.${this.region}.amazonaws.com`
+    });
+    
   }
 }
 

@@ -20,7 +20,7 @@ export class SftpUsersStack extends cdk.Stack {
     // iterate through each user
     props.users.forEach( (user) => {
       // create a user-specific bucket to store user data
-      const userBucket = new s3.Bucket(this,user['name'] + '-homedirbucket', {
+      const userBucket = new s3.Bucket(this,user['name'] + '-homedirbucket-', {
         encryption: s3.BucketEncryption.S3_MANAGED,
         versioned: true,
         enforceSSL: true,
@@ -42,7 +42,7 @@ export class SftpUsersStack extends cdk.Stack {
       })
       // grant read and write access to the home directory bucket. "*" is not required here, but is here to show how we can 
       // limit the objects based on a glob pattern.
-      userBucket.grantReadWrite(transferAccessRole,"*")
+      userBucket.grantReadWrite(transferAccessRole,user['name'] + "/*")
 
       // create an sftp user that can see their own bucket as /
       const sftpUser = new aws_transfer.CfnUser(this,'xfer-user-' + user['name'],{
@@ -52,7 +52,7 @@ export class SftpUsersStack extends cdk.Stack {
         sshPublicKeys: [ user['publickey'] ],
         homeDirectoryType: 'LOGICAL',
         homeDirectoryMappings: [
-          { entry: "/", target: "/" + userBucket.bucketName  }
+          { entry: "/", target: "/" + userBucket.bucketName + "/" + user['name'] }
         ]
       })
     });
