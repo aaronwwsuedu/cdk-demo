@@ -14,7 +14,7 @@ export class ServerlessRestapiStack extends cdk.Stack {
       code: lambda.Code.fromAsset(`${__dirname}/lambda/default`) // lib/lambda/default/index.js
     })
 
-    const restapi = new gateway.LambdaRestApi(this,'hdtools',{
+    const restapi = new gateway.LambdaRestApi(this,'examplegateway',{
       handler: default_handler,
       proxy: false,
     })
@@ -25,11 +25,14 @@ export class ServerlessRestapiStack extends cdk.Stack {
     singleitem.addMethod('GET')
     const itemevent = singleitem.addResource('event')
     // items/{item}/event gets a dedicated handler.
-    itemevent.addMethod('GET',new gateway.LambdaIntegration(new lambda.Function(this,'itemEventHandler',{
-      runtime: lambda.Runtime.NODEJS_14_X,
-      handler: 'index.handler',
-      code: lambda.Code.fromAsset(`${__dirname}/lambda/users/user/event`)
-    })));
-    
+    itemevent.addMethod('GET',
+      new gateway.LambdaIntegration(
+        new lambda.Function(this,'itemEventHandler',{
+          runtime: lambda.Runtime.NODEJS_14_X,
+          handler: 'index.handler',
+          code: lambda.Code.fromAsset(`${__dirname}/lambda/users/user/event`)
+        })
+      )
+    );
   }
 }
