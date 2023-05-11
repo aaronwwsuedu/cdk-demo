@@ -2,7 +2,6 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { FileGatewayS3Stack } from '../lib/file-gateway-s3-bucket-stack';
-import { FileGatewayStorageGatewayStack } from '../lib/file-gateway-s3-gateway-stack';
 import { FileGatewayFileGatewayStack } from '../lib/file-gateway-s3-local-stack';
 import { FileGatewayClientStack } from '../lib/file-gateway-s3-client-stack'
 
@@ -19,17 +18,10 @@ const s3Stack = new FileGatewayS3Stack(app, 'StorageGWS3Stack', {
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   tags: tags,
 });
-/* Storage Gateway Endpoint */
-const stGwStack = new FileGatewayStorageGatewayStack(app,'StorageGWStack', {
-  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  vpc_id: vpc_id,
-  tags: tags,
-})
 /* File gateway appliance/cache. Typically Deployed in "customer datacenter", not AWS */
 const fileGWStack = new FileGatewayFileGatewayStack(app,'FileGWStack', {
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   vpc_id: vpc_id,
-  sgEndpoint: stGwStack.sgEndpoint,
   tags: tags,
 })
 /* client to test */

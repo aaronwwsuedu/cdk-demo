@@ -16,6 +16,22 @@ export class FileGatewayClientStack extends cdk.Stack {
     const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: props.vpc_id })
     const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PUBLIC } );
 
+    // in order to use session manager to connect to the VM in the isolated network, we need endpiints for EC2, Session Manager, and 
+    // the message services
+    const interfaces: { [index: string]: ec2.InterfaceVpcEndpointAwsService } = {
+      'ec2': ec2.InterfaceVpcEndpointAwsService.EC2,
+      'ec2-message': ec2.InterfaceVpcEndpointAwsService.EC2_MESSAGES,
+      'ssm': ec2.InterfaceVpcEndpointAwsService.SSM,
+      'ssm-message': ec2.InterfaceVpcEndpointAwsService.SSM_MESSAGES,
+    }
+    for (let key in interfaces) { 
+      new ec2.InterfaceVpcEndpoint(this,key,{
+        vpc: vpc,
+        subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
+        service: interfaces[key]
+      })
+    }
+
     const userdata = ec2.UserData.forLinux()
     //userdata.addCommands(
     //  'mkfs -t xfs /dev/sdf',
@@ -42,6 +58,6 @@ export class FileGatewayClientStack extends cdk.Stack {
     ec2_client.connections.allowTo(props.file_gateway,ec2.Port.tcp(80)) // allow us to connect to the SG on port 80 to get the activation key
       
     /* enable SSM profile to allow us to connect to client using AWS console */
-    ec2_client.role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonEC2RoleforSSM"))
+    ec2_client.role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore"))
   }
 }
