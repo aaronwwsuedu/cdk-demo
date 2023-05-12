@@ -15,7 +15,7 @@ export class FileGatewayFileGatewayStack extends cdk.Stack {
     super(scope, id, props);
 
     const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: props.vpc_id })
-    const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PUBLIC } );
+    const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PRIVATE_ISOLATED } );
 
 
     // This implementation uses an isolated network, so it cannot use public endpoints or access the public internet.
