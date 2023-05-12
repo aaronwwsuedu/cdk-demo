@@ -14,7 +14,7 @@ export class FileGatewayClientStack extends cdk.Stack {
     super(scope, id, props);
 
     const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: props.vpc_id })
-    const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PUBLIC } );
+    const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PRIVATE_ISOLATED } );
 
     // in order to use session manager to connect to the VM in the isolated network, we need endpiints for EC2, Session Manager, and 
     // the message services
