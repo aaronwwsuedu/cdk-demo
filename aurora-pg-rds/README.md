@@ -14,11 +14,12 @@ This is a POC only. To use in your account, you will likely need to modify
  get the IP of the jump service: aws ec2 describe-instances --filters Name=tag:aws:autoscaling:groupName,Values=TheAsgName --query 'Reservations[].Instances[].PublicIpAddress' (this will be provided by the Cdk output)
  get the private key save to your local disk:
 
- connect to the jump server: ssh -i <identityfile> ec2-user@<admin ip>
+ connect to the jump server using AWS console
 
- from the jump server, get credentials:
+ get credentials from AWS secrets manager:
 
  connect to pgsql: 
+ from the client: psql -h <rds name> -U postgres mydata
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 

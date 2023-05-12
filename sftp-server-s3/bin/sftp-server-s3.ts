@@ -14,6 +14,12 @@ const users = [
  { 'name': 'user2', 'publickey': 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCid0eK1uwTup/7bqFEvST554qI5PWm5G7l4OKJ5qTRjjLLeFmF6BTo3VlDK5XgW6QQxDTC2V02AZxZ0QBLlqxMjNjJxhB5XqhA/Pn5ovv482OUVI/qSEDqcORWMxJqKrQmfv/mgIWz/H3bJKBT4lD/LvfnbYlspoPhaqtUBMGWGo6u5n4dzVns15bUPYbH+yeQ8nOmQEScnQc9igmbPC1qXD3L3+zYpos8hHTAk9rqoXCokuoFDr+9jIl/3egZoJy9ye3VxOMQj25pCd1TD+2rAEIy5NfoMuBpky8AFuVeC9YBU5uGmZdypo9Z4bPozkPlWh50ZbYhvEdKF1y3M8G+861CXd/f04Lv9Ey5LssJ5Q6Udd2guyWVlhPmSILj7a0MGeMiYscOHZJw+b9ONC4hOseHi9ckaXnJE44UA1LtWXweLT4K34+K2SGuGzJuuUS57lkT5iRaO0X289PD8NjNfbmrIx/2Fbr4ydTgKWC9+MgGfDx4i0XcRHmGF/4lvls= localaaron@t1-001013.vpn.wsu.edu' }
 ]
 
+const tags = {
+  'service-family': 'demo-sftp',
+  'service-id': 'demo-sftp',
+  'environment': 'development'
+}
+
 
 const serverStack = new SftpServerS3Stack(app, 'SftpServerS3Stack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
@@ -23,6 +29,7 @@ const serverStack = new SftpServerS3Stack(app, 'SftpServerS3Stack', {
   /* Uncomment the next line to specialize this stack for the AWS Account
    * and Region that are implied by the current CLI configuration. */
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+  tags: tags,
 
   /* Uncomment the next line if you know exactly what Account and Region you
    * want to deploy the stack to. */
@@ -40,5 +47,6 @@ new SftpUsersStack(app,'SftpUsersStack', {
   // the user stack uses the transfer server created in the app stack, also with an extension of the stack properties
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   users: users,
-  transferServer: serverStack.transfer_server
+  transferServer: serverStack.transfer_server,
+  tags: tags,
 })

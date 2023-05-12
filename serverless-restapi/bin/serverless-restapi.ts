@@ -2,6 +2,11 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { ServerlessRestapiStack } from '../lib/serverless-restapi-stack';
+const tags = {
+  'service-family': 'demo-apigateway',
+  'service-id': 'demo-apigateway',
+  'environment': 'development'
+}
 
 const app = new cdk.App();
 new ServerlessRestapiStack(app, 'ServerlessRestapiStack', {
@@ -12,7 +17,7 @@ new ServerlessRestapiStack(app, 'ServerlessRestapiStack', {
   /* Uncomment the next line to specialize this stack for the AWS Account
    * and Region that are implied by the current CLI configuration. */
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-
+  tags: tags,
   /* Uncomment the next line if you know exactly what Account and Region you
    * want to deploy the stack to. */
   // env: { account: '123456789012', region: 'us-east-1' },
