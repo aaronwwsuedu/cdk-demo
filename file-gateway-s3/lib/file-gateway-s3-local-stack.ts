@@ -5,7 +5,6 @@ import { addDependency } from 'aws-cdk-lib/core/lib/deps';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 interface FileGatewayFileGatewayStackProps extends cdk.StackProps {
-  vpc_id: string,
  }
  
 export class FileGatewayFileGatewayStack extends cdk.Stack {
@@ -14,7 +13,7 @@ export class FileGatewayFileGatewayStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: FileGatewayFileGatewayStackProps) {
     super(scope, id, props);
 
-    const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: props.vpc_id })
+    const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: process.env.VPC_ID })
     const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PRIVATE_ISOLATED } );
 
 

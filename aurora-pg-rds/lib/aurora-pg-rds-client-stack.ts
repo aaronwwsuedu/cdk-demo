@@ -6,7 +6,6 @@ import * as rds from 'aws-cdk-lib/aws-rds';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 interface AuroraPgClientStackProps extends cdk.StackProps {
-  vpc_id: string,
   rds_instance: rds.IDatabaseCluster,
  }
 
@@ -14,7 +13,7 @@ export class AuroraPgClientStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AuroraPgClientStackProps) {
     super(scope, id, props);
 
-    const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: props.vpc_id })
+    const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: process.env.VPC_ID })
     const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PRIVATE_ISOLATED } );
 
     // in order to use session manager to connect to the VM in the isolated network, we need endpiints for EC2, Session Manager, and 

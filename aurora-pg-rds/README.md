@@ -1,16 +1,14 @@
 # Welcome to your CDK TypeScript project
 
-This is a blank project for CDK development with TypeScript. This project will
-create an aurora database for Postgresql within a VPC, with a jump host that allows
-access to the db.
+This project will create an aurora database for Postgresql within a VPC, with a
+jump host that allows access to the db.
 
 This is a POC only. To use in your account, you will likely need to modify
  bin/aurora-pg-rds.ts
  * change allowedNetworks to contain your access networks
- * Change vpc_id to your VPC
 
  To connect to the database:
- deploy the stack: cdk deploy --parameters instanceCount=1
+ deploy the stack: ```cdk deploy --parameters instanceCount=1```
  get the IP of the jump service: aws ec2 describe-instances --filters Name=tag:aws:autoscaling:groupName,Values=TheAsgName --query 'Reservations[].Instances[].PublicIpAddress' (this will be provided by the Cdk output)
  get the private key save to your local disk:
 

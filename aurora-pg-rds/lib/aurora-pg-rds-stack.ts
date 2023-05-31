@@ -12,7 +12,6 @@ interface AuroraPgRdsStackProps extends cdk.StackProps {
     cidr: string;
     comment: string;
   }[]
-  vpc_id: string,
 }
 
 //I guess at the end of the day we want the following style of RDS:
@@ -28,7 +27,7 @@ export class AuroraPgRdsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AuroraPgRdsStackProps) {
     super(scope, id, props);
 
-    const vpc    = ec2.Vpc.fromLookup(this,'default_vpc',{ vpcId: props.vpc_id })
+    const vpc    = ec2.Vpc.fromLookup(this,'default_vpc',{ vpcId: process.env.VPC_ID })
 
     // first, lets generate a secret to be used as credentials for our database
     const databaseCredentialsSecret = new secrets.Secret(this, 'DBCredentialsSecret', {

@@ -4,7 +4,7 @@ import * as cdk from 'aws-cdk-lib';
 import { AuroraPgRdsStack } from '../lib/aurora-pg-rds-stack';
 import { AuroraPgClientStack } from "../lib/aurora-pg-rds-client-stack";
 
-const vpc_id = 'vpc-0216c91a9f09136b7'
+// get environment variable VPC_ID for VPC
 const allowed_networks = [
   { 'comment': 'EIS admin VPN egress IP', 'cidr': '69.166.59.127/32'},
 ]
@@ -32,7 +32,6 @@ const DbStack = new AuroraPgRdsStack(app, 'AuroraPgRdsStack', {
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 
   tags: tags,
-  vpc_id: vpc_id,
   allowedNetworks: allowed_networks
 });
 new AuroraPgClientStack(app,'AuroraPgRdsClientStack', {
@@ -45,6 +44,5 @@ new AuroraPgClientStack(app,'AuroraPgRdsClientStack', {
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 
   tags: tags,
-  vpc_id: vpc_id,
   rds_instance: DbStack.rds
 })

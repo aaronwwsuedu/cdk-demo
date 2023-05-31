@@ -5,7 +5,6 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 interface FileGatewayClientStackProps extends cdk.StackProps {
-  vpc_id: string,
   file_gateway: ec2.IInstance,
  }
 
@@ -13,7 +12,7 @@ export class FileGatewayClientStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: FileGatewayClientStackProps) {
     super(scope, id, props);
 
-    const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: props.vpc_id })
+    const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: process.env.VPC_ID })
     const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PRIVATE_ISOLATED } );
 
     // in order to use session manager to connect to the VM in the isolated network, we need endpiints for EC2, Session Manager, and 

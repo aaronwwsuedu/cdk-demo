@@ -6,7 +6,6 @@ import { FileGatewayFileGatewayStack } from '../lib/file-gateway-s3-local-stack'
 import { FileGatewayClientStack } from '../lib/file-gateway-s3-client-stack'
 
 const app = new cdk.App();
-const vpc_id = 'vpc-0216c91a9f09136b7';
 const tags = {
   'service-name': 'demo-file-gateway',
   'service-family': 'storage-gateway',
@@ -21,13 +20,11 @@ const s3Stack = new FileGatewayS3Stack(app, 'StorageGWS3Stack', {
 /* File gateway appliance/cache. Typically Deployed in "customer datacenter", not AWS */
 const fileGWStack = new FileGatewayFileGatewayStack(app,'FileGWStack', {
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  vpc_id: vpc_id,
   tags: tags,
 })
 /* client to test */
 const clientStack = new FileGatewayClientStack(app,'ClientStack', {
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  vpc_id: vpc_id,
   file_gateway: fileGWStack.file_gateway_instance,
   tags: tags,
 })

@@ -8,7 +8,7 @@ export class Ec2DemoStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: 'vpc-0216c91a9f09136b7' })
+    const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: process.env.VPC_ID })
     const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PUBLIC } );
 
     const userdata = ec2.UserData.forLinux()

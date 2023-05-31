@@ -6,7 +6,6 @@ a set of S3 buckets (one per user)
 
 This is a POC only. To use in your account, you will likely need to modify bin/sftp-server-s3.ts
  * change allowedNetworks to contain your access requirements to test the service
- * Change vpc_id to your VPC id.
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 

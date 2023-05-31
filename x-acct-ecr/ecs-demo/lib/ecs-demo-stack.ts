@@ -23,7 +23,7 @@ export class EcsDemoStack extends cdk.Stack {
       type: "String",
       description: "AWS Account holding ECR repo for hello world image",
     })
-    const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: 'vpc-0216c91a9f09136b7' })
+    const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: process.env.VPC_ID })
 
     const lg = new logs.LogGroup(this,'helloWorldContainer',{
       logGroupName: '/ecs/fargate/hello-world',

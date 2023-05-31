@@ -12,7 +12,6 @@ interface SftpServerS3StackProps extends cdk.StackProps {
     cidr: string;
     comment: string;
   }[]
-  vpc_id: string,
 }
 
 export class SftpServerS3Stack extends cdk.Stack {
@@ -21,7 +20,7 @@ export class SftpServerS3Stack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: SftpServerS3StackProps) {
     super(scope, id, props);
 
-    const vpc    = ec2.Vpc.fromLookup(this,'default_vpc',{ vpcId: props?.vpc_id })
+    const vpc    = ec2.Vpc.fromLookup(this,'default_vpc',{ vpcId: process.env.VPC_ID })
     
     /* Note that this servicePrincipal is restricted, to protect from confused deputy issues 
      * this is an example, which is still not least privilege, but limits to "only transfer servers in this account"
