@@ -23,6 +23,11 @@ export class EcsDemoStack extends cdk.Stack {
       type: "String",
       description: "AWS Account holding ECR repo for hello world image",
     })
+
+    if (process.env.VPC_ID == null) {
+      console.log("environment variable VPC_ID must be set to desired VPC")
+      process.exit(1)
+    }
     const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: process.env.VPC_ID })
 
     const lg = new logs.LogGroup(this,'helloWorldContainer',{

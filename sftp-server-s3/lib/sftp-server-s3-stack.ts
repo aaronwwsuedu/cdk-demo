@@ -20,6 +20,10 @@ export class SftpServerS3Stack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: SftpServerS3StackProps) {
     super(scope, id, props);
 
+    if (process.env.VPC_ID == null) {
+      console.log("environment variable VPC_ID must be set to desired VPC")
+      process.exit(1)
+    }
     const vpc    = ec2.Vpc.fromLookup(this,'default_vpc',{ vpcId: process.env.VPC_ID })
     
     /* Note that this servicePrincipal is restricted, to protect from confused deputy issues 
