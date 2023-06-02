@@ -13,6 +13,10 @@ export class AuroraPgClientStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AuroraPgClientStackProps) {
     super(scope, id, props);
 
+    if (process.env.VPC_ID == null) {
+      console.log("environment variable VPC_ID must be set to desired VPC")
+      process.exit(1)
+    }
     const vpc = ec2.Vpc.fromLookup(this,'vpc',{ vpcId: process.env.VPC_ID })
     const subnets = vpc.selectSubnets( { subnetType: ec2.SubnetType.PRIVATE_ISOLATED } );
 
